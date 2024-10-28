@@ -1,0 +1,21 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+
+body {
+    font-family: "Inter", sans-serif;
+    background-color: #F1EFEF;
+}
+
+hr {
+    width:calc(100% - 64px);
+}
+
+.progress {
+    width:0%;
+}
+
+.progress::after {
+    content: var(--progress-content, '0%');
+    position: absolute;
+    top: -2rem;
+    left: 50%;
+}

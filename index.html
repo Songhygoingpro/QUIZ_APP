@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QUIZ.dev</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+
+  <body>
+    <header class="p-4 md:px-8 py-6 grid relative">
+      <img class="h-20 w-fit" src="./img/quiz-logo.png" alt />
+      <hr class="border border-gray-400 absolute bottom-0 left-8" />
+    </header>
+    <main>
+      <section class="category py-[60px] px-5">
+        <div class="category__inner max-w-[1200px] w-full mx-auto space-y-10">
+          <h1 class="text-2xl font-bold">Quiz Category</h1>
+          <ul class="quizzes grid grid-cols-3 gap-8">
+            <li class="grid">
+              <button
+                onclick="loadQuiz('linux')"
+                class="quiz md:active:shadow-none md:active:translate-x-[0px] md:active:translate-y-[0px] hover:-translate-x-[8px] hover:-translate-y-[8px] transition-all duration-300 bg-white px-8 py-10 space-y-4 flex flex-col items-center rounded-3xl hover:shadow-[8px_8px_0_0] hover:shadow-[#F66262] border border-[#F66262]"
+              >
+                <img class="h-[105px] w-auto" src="./img/linux.png" alt />
+                <div class="quiz-content space-y-3 text-start">
+                  <h2 class="text-xl font-bold text-[#B30220]">
+                    Mastering Linux Commands
+                  </h2>
+                  <p>
+                    "Think you know Linux inside out? Test your knowledge of
+                    essential commands, system management, and shell scripting."
+                  </p>
+                </div>
+              </button>
+            </li>
+            <li class="grid">
+              <button
+                onclick="loadQuiz('devops')"
+                class="quiz md:active:shadow-none md:active:translate-x-[0px] md:active:translate-y-[0px] hover:-translate-x-[8px] hover:-translate-y-[8px] transition-all duration-300 bg-white px-8 py-10 space-y-4 flex flex-col items-center rounded-3xl hover:shadow-[8px_8px_0_0] hover:shadow-[#4A86D1] border border-[#4A86D1]"
+              >
+                <img class="h-[105px] w-auto" src="./img/devops.png" alt />
+                <div class="quiz-content space-y-3 text-start">
+                  <h2 class="text-xl font-bold text-[#064597]">
+                    DevOps Best Practices
+                  </h2>
+                  <p>
+                    "Explore the world of automation, CI/CD pipelines, and
+                    collaborative development processes. Perfect for DevOps
+                    enthusiasts!"
+                  </p>
+                </div>
+              </button>
+            </li>
+            <li class="grid">
+              <button
+                onclick="loadQuiz('sql')"
+                class="quiz md:active:shadow-none md:active:translate-x-[0px] md:active:translate-y-[0px] hover:-translate-x-[8px] hover:-translate-y-[8px] transition-all duration-300 bg-white px-8 py-10 space-y-4 flex flex-col items-center rounded-3xl hover:shadow-[8px_8px_0_0] hover:shadow-[#EEAB53] border border-[#EEAB53]"
+              >
+                <img class="h-[105px] w-auto" src="./img/sql.png" alt />
+                <div class="quiz-content space-y-3 text-start">
+                  <h2 class="text-xl font-bold text-[#E89024]">
+                    SQL Fundamental
+                  </h2>
+                  <p>
+                    "Database mastery awaits! Put your SQL skills to the test in
+                    this challenging quiz."
+                  </p>
+                </div>
+              </button>
+            </li>
+            <li class="grid">
+              <button
+                onclick="loadQuiz('code')"
+                class="quiz md:active:shadow-none md:active:translate-x-[0px] md:active:translate-y-[0px] hover:-translate-x-[8px] hover:-translate-y-[8px] transition-all duration-300 bg-white px-8 py-10 space-y-4 flex flex-col items-center rounded-3xl hover:shadow-[8px_8px_0_0] hover:shadow-[#4EE07F] border border-[#4EE07F]"
+              >
+                <img class="h-[105px] w-auto" src="./img/programming.png" alt />
+                <div class="quiz-content space-y-3 text-start">
+                  <h2 class="text-xl font-bold text-[#008E2F]">
+                    Programming Language Showdown (PHP, JS, Python)
+                  </h2>
+                  <p>
+                    "Challenge your coding skills across multiple languages!
+                    Whether it's PHP, JavaScript, or Python, this quiz will test
+                    your versatility as a programmer."
+                  </p>
+                </div>
+              </button>
+            </li>
+            <li class="grid">
+              <button
+                onclick="loadQuiz('cms')"
+                class="quiz md:active:shadow-none md:active:translate-x-[0px] md:active:translate-y-[0px] hover:-translate-x-[8px] hover:-translate-y-[8px] transition-all duration-300 bg-white px-8 py-10 space-y-4 flex flex-col items-center rounded-3xl hover:shadow-[8px_8px_0_0] hover:shadow-[#E379A4] border border-[#E379A4]"
+              >
+                <img class="h-[105px] w-auto" src="./img/cms.png" alt />
+                <div class="quiz-content space-y-3 text-start">
+                  <h2 class="text-xl font-bold text-[#E51067]">
+                    CMS Fundamental
+                  </h2>
+                  <p>
+                    "Test your CMS skills on topics like plugins, themes, and
+                    customization in this challenging quiz."
+                  </p>
+                </div>
+              </button>
+            </li>
+            <li class="grid">
+              <button
+                onclick="loadQuiz('docker')"
+                class="quiz md:active:shadow-none md:active:translate-x-[0px] md:active:translate-y-[0px] hover:-translate-x-[8px] hover:-translate-y-[8px] transition-all duration-300 bg-white px-8 py-10 space-y-4 flex flex-col items-center rounded-3xl hover:shadow-[8px_8px_0_0] hover:shadow-[#61C4CB] border border-[#61C4CB]"
+              >
+                <img class="h-[105px] w-auto" src="./img/docker.png" alt />
+                <div class="quiz-content space-y-3 text-start">
+                  <h2 class="text-xl font-bold text-[#008892]">
+                    Docker Mastery: A Linux Challenge
+                  </h2>
+                  <p>
+                    "Think you know Linux inside out? Test your knowledge of
+                    essential commands, system management, and shell scripting."
+                  </p>
+                </div>
+              </button>
+            </li>
+          </ul>
+        </div>
+      </section>
+    </main>
+    <script>
+      // Function to navigate to the quiz page with the selected category
+      function loadQuiz(category) {
+        // Redirect to the quiz page, passing the category in the query string
+        window.location.href = `quiz.html?category=${category}`;
+      }
+    </script>
+  </body>
+</html>
