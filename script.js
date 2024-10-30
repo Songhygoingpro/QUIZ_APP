@@ -24,6 +24,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error('Error fetching quiz data:', err);
             });
     }
+    
+    // Fetch questions when category is available
+    const category = getCategoryFromUrl();
+    if (category) {
+        fetchCategory(category);
+    }
 
     // Modal and navigation setup
     const continueQuizBtn = document.querySelector(".continue-btn");
@@ -31,8 +37,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const quitQuizBtn = document.querySelector('.quit-quiz-btn');
 
     function handleBeforeUnload(event) {
+        
         event.preventDefault();
         event.returnValue = ''; // Necessary for modern browsers
+        
     }
 
     window.addEventListener('popstate', function (event) {
@@ -41,11 +49,12 @@ document.addEventListener('DOMContentLoaded', () => {
             window.removeEventListener('beforeunload', handleBeforeUnload);
         }
     });
+    
+
 
     continueQuizBtn.addEventListener("click", () => {
         quizModal.classList.toggle('hidden');
         window.addEventListener('beforeunload', handleBeforeUnload);
-        history.pushState(null, '', window.location.pathname);
     });
 
     quitQuizBtn.addEventListener("click", () => {
@@ -53,11 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
         window.removeEventListener('beforeunload', handleBeforeUnload);
     });
 
-    // Fetch questions when category is available
-    const category = getCategoryFromUrl();
-    if (category) {
-        fetchCategory(category);
-    }
+  
 
     // Display questions and manage navigation
     function displayQuestion(data) {
@@ -86,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         updateQuestion();
         window.addEventListener('beforeunload', handleBeforeUnload);
-        history.pushState({ quizStarted: true }, 'Quiz', '?quiz');
+        history.pushState({ quizStarted: true }, 'Quiz', `?category=${category}`);
 
         // Handle "Next" button click
         nextButton.addEventListener('click', () => {
@@ -96,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
             progressBar.style.transition = 'width 0.5s ease-in-out';
             progressBar.style.width = progressWidth;
             progressBar.style.setProperty('--progress-content', `"${progressWidth}"`);
-            history.pushState({ quizStarted: true }, 'Quiz', '?quiz');
+            history.pushState({ quizStarted: true }, 'Quiz', `?category=${category}`);
             // Save user's answer
             usersAnswer.forEach(userAnswer => {
                 selectedAnswers[currentQuestionIndex - 1] = userAnswer.value;
