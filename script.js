@@ -1,259 +1,230 @@
-document.addEventListener('DOMContentLoaded', () => {
-    let apiKey = 'SRQkjOgModXzaPQwxkrdbmoZCVmC6IgnnFRcDKls';
+const QuizApp = (() => {
+    const apiKey = 'SRQkjOgModXzaPQwxkrdbmoZCVmC6IgnnFRcDKls';
+    let selectedAnswers = [];
+    let currentQuestionIndex = 0;
+    let correctAnswersCount = 0;
+    let questions = [];
+    let correct_Answers = [];
 
-    // Get category parameter from the URL
-    function getCategoryFromUrl() {
-        const urlParams = new URLSearchParams(window.location.search);
-        return urlParams.get('category');
-    }
+    // State Management Module
+    const StateManager = (() => {
+        return {
+            getCategory: () => new URLSearchParams(window.location.search).get('category'),
+            saveAnswer: (questionIndex, answer) => selectedAnswers[questionIndex] = answer,
+            getAnswer: (questionIndex) => selectedAnswers[questionIndex],
+            resetState: (numQuestions) => {
+                // selectedAnswers = Array(numQuestions).fill(null);
+                currentQuestionIndex = 0;
+                correctAnswersCount = 0;
+            },
+            incrementCorrectAnswers: () => correctAnswersCount++
+        };
+    })();
 
-    // Fetch quiz questions based on the category
-    function fetchCategory(category) {
-        const url = `https://quizapi.io/api/v1/questions?apiKey=${apiKey}&limit=10&category=${category}`;
+    // Fetch Module
+    const FetchModule = (() => {
+        const fetchCategoryQuestions = async (category) => {
+            const url = `https://quizapi.io/api/v1/questions?apiKey=${apiKey}&limit=10&category=${category}`;
+            const response = await fetch(url, { headers: { 'Content-Type': 'application/json' } });
+            return response.json();
+        };
+        return { fetchCategoryQuestions };
+    })();
 
-        fetch(url, {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' }
-        })
-            .then(response => response.json())
-            .then(data => {
-                // Call the function to display questions
-                displayQuestion(data);
-            })
-            .catch(err => {
-                console.error('Error fetching quiz data:', err);
-            });
-    }
-    
-    // Fetch questions when category is available
-    const category = getCategoryFromUrl();
-    if (category) {
-        fetchCategory(category);
-    }
-
-    // Modal and navigation setup
-    const continueQuizBtn = document.querySelector(".continue-btn");
-    const quizModal = document.querySelector('.quit-quiz-modal');
-    const quitQuizBtn = document.querySelector('.quit-quiz-btn');
-
-    function handleBeforeUnload(event) {
-        
-        event.preventDefault();
-        event.returnValue = ''; // Necessary for modern browsers
-        
-    }
-
-    window.addEventListener('popstate', function (event) {
-        if (event.state && event.state.quizStarted) {
-            quizModal.classList.toggle('hidden');
-            window.removeEventListener('beforeunload', handleBeforeUnload);
-        }
-    });
-    
-
-
-    continueQuizBtn.addEventListener("click", () => {
-        quizModal.classList.toggle('hidden');
-        window.addEventListener('beforeunload', handleBeforeUnload);
-    });
-
-    quitQuizBtn.addEventListener("click", () => {
-        quizModal.classList.toggle('hidden');
-        window.removeEventListener('beforeunload', handleBeforeUnload);
-    });
-
-  
-
-    // Display questions and manage navigation
-    function displayQuestion(data) {
+    // UI Module
+    const UIModule = (() => {
         const quizContent = document.querySelector('.quiz-content');
-        const questionOrderElement = quizContent.querySelector('.question-order');
-        const questionElement = quizContent.querySelector(".question");
-        const answerContainer = quizContent.querySelector(".answers");
-
-        // Array to store selected answers
-        const selectedAnswers = Array(data.length).fill(null);
-        let currentQuestionIndex = 0;
-        let correctAnswersCount = 0;
-
-        const nextButton = document.querySelector('.next');
-        const previousButton = document.querySelector('.previous');
         const progressBar = document.querySelector('.progress');
         const quizResultModal = document.querySelector(".quiz-result-modal");
-        const scoreElement = document.querySelector('.score span');
-        const totalQuestionsElement = document.querySelector(".total-questions span");
-        const correctAnswerElement = document.querySelector('.correct-answers span');
-        const topicElement = document.querySelector('.topic span');
-        const gradeElement = document.querySelector(".grade span");
-        const finalResultElement = document.querySelector(".final-result span");
-        const quizResultDescription = document.querySelector(".quiz-result-description");
-        const resultScoreBar = document.querySelector(".result-score-bar span");
+        const quizQuitModal = document.querySelector('.quit-quiz-modal');
 
-        updateQuestion();
-        window.addEventListener('beforeunload', handleBeforeUnload);
-        history.pushState({ quizStarted: true }, 'Quiz', `?category=${category}`);
+        const loadQuitQuizModal = () => {
+            quizQuitModal.classList.toggle('hidden');
+        }
 
-        // Handle "Next" button click
-        nextButton.addEventListener('click', () => {
-            const usersAnswer = document.querySelectorAll(".answer input[type='radio']:checked");
-            currentQuestionIndex++;
-            let progressWidth = (10 * currentQuestionIndex) + '%';
-            progressBar.style.transition = 'width 0.5s ease-in-out';
-            progressBar.style.width = progressWidth;
-            progressBar.style.setProperty('--progress-content', `"${progressWidth}"`);
+        const updateProgressBar = (progressPercentage) => {
+            progressBar.style.width = `${progressPercentage}%`;
+            progressBar.style.setProperty('--progress-content', `"${progressPercentage}%"`);
+        };
+
+        const displayQuestion = (display_questions = {}, index = 0, total = 0) => {
+            quizContent.querySelector('.question-order').textContent = `Question ${index} of ${total}`;
+            quizContent.querySelector(".question").textContent = display_questions ? display_questions.question : null;
+            const answerContainer = quizContent.querySelector(".answers");
+            answerContainer.innerHTML = '';
+
+            if (display_questions !== null) {
+                Object.keys(display_questions.answers).forEach(key => {
+                    if (display_questions.answers[key]) {
+                        answerContainer.appendChild(createAnswerOption(key, display_questions.answers[key], display_questions.id));
+                    }
+                });
+            }
+            restoreSelectedAnswer(index);
+        };
+
+        const createAnswerOption = (key, answerText, questionId) => {
+            const answerOption = document.createElement('li');
+            answerOption.classList.add('answer');
+            answerOption.innerHTML = `
+                <label for='${key}-${questionId}' class='w-full cursor-pointer px-4 py-2 border border-gray-400 gap-2 grid grid-cols-[1fr_auto]'><p class='block'>${answerText}<p><input type='radio' id='${key}-${questionId}' class='radio' name='answer-radio-${questionId}' value='${key}'></label>
+            `;
+            return answerOption;
+        };
+
+        const restoreSelectedAnswer = (index) => {
+            const savedAnswer = StateManager.getAnswer(index);
+            if (savedAnswer) {
+                const answerContainer = quizContent.querySelector(".answers");
+                const selectedRadio = answerContainer.querySelector(`input[value='${savedAnswer}']`);
+                if (selectedRadio) selectedRadio.checked = true;
+            }
+        };
+
+        const showResults = (score, totalQuestions, correctAnswers, grade, finalResult) => {
+            document.querySelector('.score span').textContent = `${score}%`;
+            document.querySelector(".total-questions span").textContent = totalQuestions;
+            document.querySelector('.correct-answers span').textContent = correctAnswers;
+            document.querySelector('.topic span').textContent = StateManager.getCategory().toUpperCase();
+            document.querySelector('.grade span').textContent = grade;
+            document.querySelector('.final-result span').textContent = finalResult;
+            quizResultModal.classList.remove('hidden');
+        };
+
+        return { displayQuestion, updateProgressBar, showResults, loadQuitQuizModal };
+    })();
+
+    // Controller for navigation
+    const QuizController = (() => {
+        const nextButton = document.querySelector('.next');
+        const previousButton = document.querySelector('.previous');
+        const continueQuizBtn = document.querySelector(".continue-btn");
+        const quitQuizBtn = document.querySelector('.quit-quiz-btn');
+        const category = StateManager.getCategory();
+
+        const setupEventListeners = () => {
+            nextButton.addEventListener('click', handleNext);
+            previousButton.addEventListener('click', handlePrevious);
+            continueQuizBtn.addEventListener('click', continueQuizSession);
+            quitQuizBtn.addEventListener('click', quitQuizSession);
+            window.addEventListener('beforeunload', handleBeforeUnload);
+            window.addEventListener('popstate', handlePopState);
             history.pushState({ quizStarted: true }, 'Quiz', `?category=${category}`);
-            // Save user's answer
-            usersAnswer.forEach(userAnswer => {
-                selectedAnswers[currentQuestionIndex - 1] = userAnswer.value;
-            });
+        };
 
-            if (currentQuestionIndex < data.length) {
-                if (currentQuestionIndex === data.length - 1) {
-                    nextButton.querySelector('.next_text').textContent = 'Submit';
-                    window.removeEventListener('beforeunload', handleBeforeUnload);
+        const continueQuizSession = () => {
+            UIModule.loadQuitQuizModal();
+            history.pushState({ quizStarted: true }, 'Quiz', `?category=${category}`);
+            window.addEventListener('beforeunload', handleBeforeUnload);
+        }
+
+        const quitQuizSession = () => {
+            UIModule.loadQuitQuizModal();
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        }
+
+        const handlePopState = (event) => {
+            if (event.state && event.state.quizStarted) {
+                UIModule.loadQuitQuizModal();
+                window.removeEventListener('beforeunload', handleBeforeUnload);
+            }
+        }
+
+        const handleBeforeUnload = (event) => {
+            event.preventDefault();
+            event.returnValue = '';
+        }
+
+        const handleNext = () => {
+            history.pushState({ quizStarted: true }, 'Quiz', `?category=${category}`);
+            saveUserAnswer();
+            currentQuestionIndex++;
+
+            if (currentQuestionIndex < questions.length) {  // Changed 'selectedAnswers' to 'questions'
+                UIModule.updateProgressBar((100 / questions.length) * currentQuestionIndex);
+                UIModule.displayQuestion(questions[currentQuestionIndex], currentQuestionIndex, questions.length);
+                if (currentQuestionIndex === questions.length - 1) {
+                    nextButton.querySelector('span').textContent = 'Submit';
                 }
-                updateQuestion();
             } else {
                 calculateResults();
             }
-        });
+        };
 
-        // Handle "Previous" button click
-        previousButton.addEventListener("click", () => {
+        const handlePrevious = () => {
             if (currentQuestionIndex > 0) {
-                const progressWidth = (10 * (currentQuestionIndex - 1)) + '%';
-                progressBar.style.width = progressWidth;
-                progressBar.style.setProperty('--progress-content', `"${progressWidth}"`);
                 currentQuestionIndex--;
-                nextButton.querySelector('.next_text').textContent = 'Next';
-                updateQuestion();
+                nextButton.querySelector('span').textContent = 'Next';
+                UIModule.updateProgressBar((100 / questions.length) * currentQuestionIndex);  // Changed 'selectedAnswers' to 'questions'
+                UIModule.displayQuestion(questions[currentQuestionIndex], currentQuestionIndex, questions.length);
             }
-        });
+        };
 
-        // Function to display a new question
-        function updateQuestion() {
-            const currentQuestion = data[currentQuestionIndex];
-            questionOrderElement.textContent = `Question ${currentQuestionIndex + 1} of ${data.length}`;
-            questionElement.textContent = currentQuestion.question;
-            answerContainer.innerHTML = '';
+        const saveUserAnswer = () => {
+            const selectedRadio = document.querySelector(".answers input[type='radio']:checked");
+            if (selectedRadio) StateManager.saveAnswer(currentQuestionIndex, selectedRadio.value);
+        };
 
-            Object.keys(currentQuestion.answers).forEach(key => {
-                if (currentQuestion.answers[key]) {
-                    const answerOption = createAnswerOption(key, currentQuestion.answers[key], currentQuestion.id);
-                    answerContainer.appendChild(answerOption);
-                }
-            });
-
-            console.log(selectedAnswers);
-
-            // Restore selected answer if exists
-            if (selectedAnswers[currentQuestionIndex] !== null) {
-                const selectedValue = selectedAnswers[currentQuestionIndex];
-                const selectedRadio = answerContainer.querySelector(`input[value='${selectedValue}']`);
-                if (selectedRadio) {
-                    selectedRadio.checked = true; // Keep the selected answer checked
+        const getCorrectAnswer = (question) => {
+            for (let key of Object.keys(question.correct_answers)) {
+                if (question.correct_answers[key] === 'true') {
+                    return key.replace('_correct', '');
                 }
             }
+            return null;
+        };
 
-            handleAnswerSelection();
-        }
 
-        // Create a list item for each answer option
-        function createAnswerOption(key, answerText, id) {
-            const answerOption = document.createElement('li');
-            answerOption.classList.add('answer', 'flex', 'justify-between', 'gap-2', 'px-4', 'py-2', 'border', 'border-gray-400', 'cursor-pointer');
-            answerOption.innerHTML = `
-                <label for='${key}-${id}'>${answerText}</label>
-                <input type='radio' id='${key}-${id}' class='radio accent-pink-600' name='answer-radio-${id}' value='${key}'>
-            `;
-            return answerOption;
-        }
+        const calculateResults = () => {
 
-        // Handle answer selection and styling logic
-        function handleAnswerSelection() {
-            const answerBlocks = document.querySelectorAll('.answer');
-            answerBlocks.forEach(answer => {
-                const radio = answer.querySelector('.radio');
-
-                answer.addEventListener('click', () => {
-                    if (!radio.checked) {
-                        radio.checked = true;
-                    }
-
-                    answerBlocks.forEach(block => {
-                        const otherRadio = block.querySelector('.radio');
-                        if (otherRadio !== radio) {
-                            otherRadio.checked = false;
-                            block.classList.remove('border-pink-500', 'border-l-8');
-                            block.classList.add('border-gray-400');
-                        } else {
-                            block.classList.add('border-pink-500', 'border-l-8');
-                            block.classList.remove('border-gray-400');
-                        }
-                    });
-
-                    // Save the selected answer in the array
-                    selectedAnswers[currentQuestionIndex] = radio.value;
-                });
-            });
-        }
-
-        // Calculate results after the last question
-        function calculateResults() {
-            const usersAnswer = document.querySelectorAll(".answer input[type='radio']:checked");
-            let correctAnswer = '';
-
-            data.forEach((dataItem, index) => {
-                Object.keys(dataItem.correct_answers).forEach((correctKey) => {
-                    if (dataItem.correct_answers[correctKey] === 'true') {
-                        correctAnswer = correctKey.replace("_correct", '');
-                    }
-                });
-
-                if (selectedAnswers[index] === correctAnswer) {
-                    correctAnswersCount++;
-                }
+            let correctAnswers = 0;
+            selectedAnswers.forEach((answer, index) => {
+                const correctAnswer = getCorrectAnswer(questions[index]);
+                if (answer === correctAnswer) correctAnswers++;
             });
 
-            scoreElement.textContent = (correctAnswersCount / data.length) * 100 + '%';
-            totalQuestionsElement.textContent = data.length;
-            correctAnswerElement.textContent = correctAnswersCount;
-            resultScoreBar.style.width = parseFloat(scoreElement.textContent) + '%';
-            for (let i = 0; i < data.length; i++) {
-                topicElement.textContent = data[0].category;
-            }
-
-            assignGrade();
-            showResult();
-        }
-
-        // Assign grade based on score
-        function assignGrade() {
-            const scorePercentage = parseFloat(scoreElement.textContent);
-            if (scorePercentage >= 90) {
-                gradeElement.textContent = 'A';
-            } else if (scorePercentage >= 80) {
-                gradeElement.textContent = 'B';
-            } else if (scorePercentage >= 70) {
-                gradeElement.textContent = 'C';
-            } else if (scorePercentage >= 60) {
-                gradeElement.textContent = 'D';
+            const score = (correctAnswers / questions.length) * 100;
+            let grade = '';
+            let finalResult = '';
+            if (score >= 90) {
+                grade = 'A';
+            } else if (score >= 80) {
+                grade = 'B';
+            } else if (score >= 70) {
+                grade = 'C';
+            } else if (score >= 60) {
+                grade = 'D';
             } else {
-                gradeElement.textContent = 'F';
+                grade = 'F';
             }
-        }
 
-        // Show the result in the modal
-        function showResult() {
-            const scorePercentage = parseFloat(scoreElement.textContent);
-            if (scorePercentage < 70) {
-                finalResultElement.textContent = "Failed";
-                quizResultDescription.textContent = "Better luck next time!";
+            if (score <= 70) {
+                finalResult = 'Failed'
             } else {
-                finalResultElement.textContent = "Passed";
-                quizResultDescription.textContent = "Congratulations!";
+                finalResult = 'Passed'
             }
-            quizResultModal.classList.remove('hidden');
+            UIModule.showResults(score, questions.length, correctAnswers, grade, finalResult);
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+            UIModule.updateProgressBar((100 / questions.length) * currentQuestionIndex);
+            UIModule.displayQuestion(null, currentQuestionIndex, questions.length);
+        };
+
+        return { setupEventListeners };
+    })();
+
+    // Main initialization function
+    const init = async () => {
+        const category = StateManager.getCategory();
+        if (category) {
+            questions = await FetchModule.fetchCategoryQuestions(category);  // Store questions in a global variable
+            StateManager.resetState(questions.length);
+            QuizController.setupEventListeners();
+            UIModule.displayQuestion(questions[currentQuestionIndex], currentQuestionIndex, questions.length);
         }
-    }
-});
+    };
+
+    return { init };
+})();
+
+// Initialize the app on DOM content loaded
+document.addEventListener('DOMContentLoaded', QuizApp.init);
