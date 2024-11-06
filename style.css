@@ -19,3 +19,7 @@ hr {
     top: -2rem;
     left: 50%;
 }
+
+input[type="radio"]:checked {
+color: rgb(255, 10, 51);
+}

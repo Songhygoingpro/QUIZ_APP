@@ -47,27 +47,41 @@ const QuizApp = (() => {
             progressBar.style.setProperty('--progress-content', `"${progressPercentage}%"`);
         };
 
-        const displayQuestion = (display_questions = {}, index = 0, total = 0) => {
-            quizContent.querySelector('.question-order').textContent = `Question ${index} of ${total}`;
-            quizContent.querySelector(".question").textContent = display_questions ? display_questions.question : null;
-            const answerContainer = quizContent.querySelector(".answers");
-            answerContainer.innerHTML = '';
+        // Inside the displayQuestion function in UIModule
+const displayQuestion = (display_questions = {}, index = 0, total = 0) => {
+    quizContent.querySelector('.question-order').textContent = `Question ${index} of ${total}`;
+    quizContent.querySelector(".question").textContent = display_questions ? display_questions.question : null;
+    const answerContainer = quizContent.querySelector(".answers");
+    answerContainer.innerHTML = '';
 
-            if (display_questions !== null) {
-                Object.keys(display_questions.answers).forEach(key => {
-                    if (display_questions.answers[key]) {
-                        answerContainer.appendChild(createAnswerOption(key, display_questions.answers[key], display_questions.id));
-                    }
+    if (display_questions !== null) {
+        Object.keys(display_questions.answers).forEach(key => {
+            if (display_questions.answers[key]) {
+                const answerOption = createAnswerOption(key, display_questions.answers[key], display_questions.id);
+                answerContainer.appendChild(answerOption);
+
+                // Add real-time background color change on selection
+                const radioInput = answerOption.querySelector('input[type="radio"]');
+                radioInput.addEventListener('change', () => {
+                    // Remove background from previously selected option
+                    answerContainer.querySelectorAll('label').forEach(label => {
+                        label.classList.remove('border-pink-600');
+                    });
+                    // Add background color to the selected option
+                    answerOption.querySelector('label').classList.add('border-pink-600');
                 });
             }
-            restoreSelectedAnswer(index);
-        };
+        });
+    }
+    restoreSelectedAnswer(index);
+};
+
 
         const createAnswerOption = (key, answerText, questionId) => {
             const answerOption = document.createElement('li');
             answerOption.classList.add('answer');
             answerOption.innerHTML = `
-                <label for='${key}-${questionId}' class='w-full cursor-pointer px-4 py-2 border border-gray-400 gap-2 grid grid-cols-[1fr_auto]'><p class='block'>${answerText}<p><input type='radio' id='${key}-${questionId}' class='radio' name='answer-radio-${questionId}' value='${key}'></label>
+                <label for='${key}-${questionId}' class='w-full cursor-pointer px-4 py-2 border border-gray-400 gap-2 grid grid-cols-[1fr_auto]'><p class='block'>${answerText}</p><input type='radio' id='${key}-${questionId}' class='radio accent-pink-600' name='answer-radio-${questionId}' value='${key}'></label>
             `;
             return answerOption;
         };
@@ -162,7 +176,10 @@ const QuizApp = (() => {
 
         const saveUserAnswer = () => {
             const selectedRadio = document.querySelector(".answers input[type='radio']:checked");
-            if (selectedRadio) StateManager.saveAnswer(currentQuestionIndex, selectedRadio.value);
+            if (selectedRadio) {
+                StateManager.saveAnswer(currentQuestionIndex, selectedRadio.value);
+               
+            }
         };
 
         const getCorrectAnswer = (question) => {
